@@ -107,7 +107,7 @@ app.post('/signup', async (req, res) => {
         const userExist = await userModel.findOne({email});
 
         if(userExist){
-            return res.status(400).json({   : 'Account already exist.'});
+            return res.status(400).json({message: 'Account already exist.'});
         }
 
         const encryptedPassword = await encryptPassword(password);
