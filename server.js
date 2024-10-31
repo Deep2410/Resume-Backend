@@ -80,7 +80,7 @@ const encryptPassword = async (password) => {
 
 // --- jwt authentication middleware
 
-const authentiacation = async (req, res, next) => {
+const authentication = async (req, res, next) => {
     const token = req.header('Authorization');
 
     if(!token){
@@ -88,7 +88,7 @@ const authentiacation = async (req, res, next) => {
     }
 
     try{
-        console.log(token);
+        
         const actualToken = token.split(' ')[1];
         const decodedToken = jwt.verify(actualToken, process.env.JWT_SECRET);
         req.user = decodedToken.id;
@@ -120,4 +120,35 @@ app.post('/signup', async (req, res) => {
         res.status(500).json({message: 'Error while Signing up:' + error});
         console.log('Error1:' + error);
     }
+});
+
+//--- Log in code
+
+app.post('/login', async (req, res) => {
+    try{
+        const {email, password} = req.body;
+        const user = await userModel.findOne({email});
+        if(!user){
+            return res.status(400).json({message: 'Account does not exist'});
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if(isMatch){
+            const token = jwt.sign({id:user._id},process.env.JWT_SECRET, {expiresIn:'1h'});
+            return res.status(200).json({message: 'Log in successfull ', token: token});
+        }
+        else{
+            return res.status(401).json({message: 'Incorrect Password'});
+        }
+    }
+    catch(error){
+        console.log(error);
+        return res.status(500).json({message: 'error in loging in: '+ error})
+    }
+})
+
+// Protected Route
+app.get('/contact', authentication, (req, res) => {
+    res.status(200).json({ message: 'Protected route accessed', userId: req.user });
 });
